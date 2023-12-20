@@ -52,6 +52,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install platformio
     - name: Release into PlatformIO
-      run: pio pkg publish --no-interactive
+      run: |
+        pio pkg publish --no-interactive
         
       
