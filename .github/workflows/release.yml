@@ -38,6 +38,8 @@ jobs:
         git add ./examples/example1/platformio.ini library.json
         git commit -m "Upgrade version from $latest_version to $next_version"
         git push origin main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Create Release
       uses: actions/create-release@v1
       with:
