@@ -29,4 +29,4 @@ jobs:
         echo "::set-output name=version_noversion::$next_version_no_v"
     - name: Update Version in File
       run: |
-        python -c "import json; data = json.load(open('path/to/your/library.json')); data['version'] = '$next_version'; json.dump(data, open('path/to/your/library.json', 'w'))"
+        python -c "import json; data = json.load(open('library.json')); data['version'] = '$next_version'; json.dump(data, open('library.json', 'w'))"
