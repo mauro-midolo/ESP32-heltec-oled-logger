@@ -54,5 +54,7 @@ jobs:
     - name: Release into PlatformIO
       run: |
         pio pkg publish --no-interactive
+      env:
+        PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_AUTH_TOKEN }}
         
       
