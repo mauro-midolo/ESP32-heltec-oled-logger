@@ -1,4 +1,4 @@
-name: Aggiorna Versione, Commit e Rilascio
+name: Test and Release
 
 on:
   push:
@@ -29,16 +29,14 @@ jobs:
         echo "::set-output name=version_noversion::$next_version_no_v"
     - name: Update Version in File
       run: |
-        python -c "import json; data = json.load(open('library.json')); data['version'] = '${{ steps.get_version.outputs.version_noversion }}'; json.dump(data, open('library.json', 'w'))"
-    - name: Update Version in platformio.ini
-      run: |
         sed -i 's/\(mauro-midolo\/ESP32 Heltec OLED Logger@^\)[0-9.]\+/\1'"${{ steps.get_version.outputs.version_noversion }}"'/' ./examples/example1/platformio.ini
+        python -c "import json; data = json.load(open('library.json')); data['version'] = '${{ steps.get_version.outputs.version_noversion }}'; json.dump(data, open('library.json', 'w'))"
     - name: Commit Changes
       run: |
         git add ./examples/example1/platformio.ini library.json
         git commit -m "Upgrade version from $latest_version to $next_version"
         git push origin main
-    - name: Create Release
+    - name: Create GitHub Release
       uses: actions/create-release@v1
       with:
         tag_name: ${{ steps.get_version.outputs.version }}
@@ -47,4 +45,13 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Set up Python
+      uses: actions/setup-python@v1
+    - name: Install PlatformIO
+      run: |
+        python -m pip install --upgrade pip
+        pip install platformio
+    - name: Release into PlatformIO
+      run: pio pkg publish --no-interactive
+        
       
