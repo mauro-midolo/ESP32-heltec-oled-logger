@@ -24,7 +24,7 @@
     "examples": [
       {
           "name": "Simple Print log",
-          "base": "examples/Example1",
+          "base": "examples/example1",
           "files": [
               "platformio.ini",
               "src/example1.cpp"
