@@ -33,3 +33,18 @@ jobs:
     - name: Update Version in platformio.ini
       run: |
         sed -i 's/\(mauro-midolo\/ESP32 Heltec OLED Logger@^\)[0-9.]\+/\1'"$next_version_no_v"'/' ./examples/example1/platformio.ini
+    - name: Commit Changes
+      run: |
+        git add ./examples/example1/platformio.ini library.json
+        git commit -m "Upgrade version from $latest_version to $next_version"
+        git push origin main
+    - name: Create Release
+      uses: actions/create-release@v1
+      with:
+        tag_name: ${{ steps.get_version.outputs.version }}
+        release_name: ${{ steps.get_version.outputs.version }}
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
