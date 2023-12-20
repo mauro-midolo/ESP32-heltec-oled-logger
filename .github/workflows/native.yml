@@ -13,4 +13,4 @@ jobs:
         python -m pip install --upgrade pip
         pip install platformio
     - name: Run tests on the native platform
-      run: platformio test -e native -d .\examples\example1\
+      run: platformio test -e native -d ./examples/example1/
