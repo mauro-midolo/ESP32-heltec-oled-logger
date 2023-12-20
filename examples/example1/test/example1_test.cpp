@@ -1,5 +1,5 @@
 #include "unity.h"
-#include "IndexedLogDisplay.h"
+#include <IndexedLogDisplay.h>
 
 // Creazione di un oggetto IndexedLogDisplay per il test
 IndexedLogDisplay logDisplay;
