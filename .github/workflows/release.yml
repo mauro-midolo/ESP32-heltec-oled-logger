@@ -29,10 +29,10 @@ jobs:
         echo "::set-output name=version_noversion::$next_version_no_v"
     - name: Update Version in File
       run: |
-        python -c "import json; data = json.load(open('library.json')); data['version'] = '$version_noversion'; json.dump(data, open('library.json', 'w'))"
+        python -c "import json; data = json.load(open('library.json')); data['version'] = '${{ steps.get_version.outputs.version_noversion }}'; json.dump(data, open('library.json', 'w'))"
     - name: Update Version in platformio.ini
       run: |
-        sed -i 's/\(mauro-midolo\/ESP32 Heltec OLED Logger@^\)[0-9.]\+/\1'"$version_noversion"'/' ./examples/example1/platformio.ini
+        sed -i 's/\(mauro-midolo\/ESP32 Heltec OLED Logger@^\)[0-9.]\+/\1'"${{ steps.get_version.outputs.version_noversion }}"'/' ./examples/example1/platformio.ini
     - name: Commit Changes
       run: |
         git add ./examples/example1/platformio.ini library.json
