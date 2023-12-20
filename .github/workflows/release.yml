@@ -22,7 +22,7 @@ jobs:
         latest_version=$(curl -s https://api.github.com/repos/mauro-midolo/ESP32-heltec-oled-logger/releases/latest | jq -r .tag_name)
         echo "Latest Version: $latest_version"
         next_version=$(python -c "parts = '$latest_version'.split('.'); parts[-1] = str(int(parts[-1]) + 1); print('.'.join(parts))")
-        next_version_no_v=$(python -c "parts = '$latest_version'.split('.'); parts[-1] = str(int(parts[-1]) + 1); print('.'.join(parts).replace("v",""))")
+        next_version_no_v=$(python -c "parts = '$latest_version'.split('.'); parts[-1] = str(int(parts[-1]) + 1); print('.'.join(parts).replace('v',''))")
         echo "Next Version: $next_version"
         echo "Next Version no version: $next_version_no_v"
         echo "::set-output name=version::$next_version"
