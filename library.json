@@ -19,7 +19,7 @@
     "license": "MIT",
     "homepage": "https://github.com/mauro-midolo/",
     "dependencies": {
-      " heltecautomation/Heltec ESP32 Dev-Boards": "~1.1.2"
+      "heltecautomation/Heltec ESP32 Dev-Boards": "~1.1.2"
     },
     "frameworks": "*",
     "platforms": "*"

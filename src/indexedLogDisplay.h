@@ -2,7 +2,6 @@
 #define IndexedLogDisplay_h
 
 #include <Heltec.h>
-#include <queue>
 
 class IndexedLogDisplay
 {
