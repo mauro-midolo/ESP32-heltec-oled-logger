@@ -1,0 +1,14 @@
+name: Aggiorna Versione, Commit e Rilascio
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
