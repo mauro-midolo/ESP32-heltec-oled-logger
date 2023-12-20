@@ -12,3 +12,7 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
+    - name: Set Up Git
+      run: |
+        git config user.name "${{ env.USER_NAME }}"
+        git config user.email "${{ env.USER_EMAIL }}"
