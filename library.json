@@ -1,6 +1,6 @@
 {
     "name": "ESP32 Heltec OLED Logger",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "ESP32 Heltec OLED Logger: Streamline logging on the Heltec ESP32 platform with real-time display on OLED, enhancing debugging and monitoring for IoT projects.",
     "keywords": "ESP32, Heltec, OLED Display, Logger, Logging, Real-time Monitoring, IoT, Embedded Systems, Debugging, Sensor Data",
     "repository":
