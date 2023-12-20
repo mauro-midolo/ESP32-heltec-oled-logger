@@ -16,3 +16,11 @@ jobs:
       run: |
         git config user.name "${{ env.USER_NAME }}"
         git config user.email "${{ env.USER_EMAIL }}"
+    - name: Get Latest Release Version
+      id: get_version
+      run: |
+        latest_version=$(curl -s https://api.github.com/repos/mauro-midolo/ESP32-heltec-oled-logger/releases/latest | jq -r .tag_name)
+        echo "Latest Version: $latest_version"
+        next_version=$(python -c "parts = '$latest_version'.split('.'); parts[-1] = str(int(parts[-1]) + 1); print('.'.join(parts))")
+        echo "Next Version: $next_version"
+        echo "::set-output name=version::$next_version"
