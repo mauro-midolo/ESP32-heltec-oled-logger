@@ -9,12 +9,6 @@ private:
     static const int NUM_LINES = 6;
     static const int LINE_HEIGHT = 10;
 
-    struct LogEntry
-    {
-        int lineNumber;
-        String text;
-    };
-
     String messages[NUM_LINES];
     bool initialized;
 

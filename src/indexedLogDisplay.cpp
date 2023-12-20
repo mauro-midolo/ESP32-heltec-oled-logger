@@ -1,5 +1,7 @@
 #include "IndexedLogDisplay.h"
 
+#include <Heltec.h>
+
 IndexedLogDisplay::IndexedLogDisplay() : initialized(false) {}
 
 void IndexedLogDisplay::begin()
