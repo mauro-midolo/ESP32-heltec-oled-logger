@@ -13,6 +13,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install platformio
     - name: Install dependencies
-      run: platformio pkg install -d ./examples/example1/
+      run: platformio pkg install -e latest_stable -d ./examples/example1/
     - name: Run tests on the native platform
       run: platformio test -e latest_stable -d ./examples/example1/
