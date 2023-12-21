@@ -2,6 +2,7 @@
 #define IndexedLogDisplay_h
 
 #include <Heltec.h>
+#include <String>
 
 class IndexedLogDisplay
 {
