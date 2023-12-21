@@ -6,6 +6,20 @@ on:
       - main
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    - name: Install PlatformIO
+      run: |
+        python -m pip install --upgrade pip
+        pip install platformio
+    - name: Run tests on the native platform
+      run: platformio run -e heltec_wifi_kit_32_V3 -d ./examples/example1/
   test:
     runs-on: ubuntu-latest
     steps:
@@ -21,7 +35,9 @@ jobs:
     - name: Run tests on the native platform
       run: platformio test -e stable -d ./examples/example1/
   release:
-    needs: test
+    needs: 
+      - build
+      - test
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Repository
