@@ -37,6 +37,7 @@ jobs:
         next_version_no_v=$(python -c "parts = '$latest_version'.split('.'); parts[-1] = str(int(parts[-1]) + 1); print('.'.join(parts).replace('v',''))")
         echo "Next Version: $next_version"
         echo "Next Version no version: $next_version_no_v"
+        echo "::set-output name=latest_version::$latest_version"
         echo "::set-output name=version::$next_version"
         echo "::set-output name=version_noversion::$next_version_no_v"
     - name: Update Version in File
@@ -46,7 +47,7 @@ jobs:
     - name: Commit Changes
       run: |
         git add ./examples/example1/platformio.ini library.json
-        git commit -m "Upgrade version from $latest_version to $next_version"
+        git commit -m "Upgrade version from ${{ steps.get_version.outputs.latest_version }} to ${{ steps.get_version.outputs.version }}"
         git push origin main
     - name: Create GitHub Release
       uses: actions/create-release@v1
