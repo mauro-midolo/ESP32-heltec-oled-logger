@@ -5,89 +5,218 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
+concurrency:
+  group: test-and-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
-    - uses: actions/checkout@v7
-    - name: Set up Python
-      uses: actions/setup-python@v7
-      with:
-        python-version: '3.10'
-    - name: Install PlatformIO
-      run: |
-        python -m pip install --upgrade pip
-        pip install platformio
-    - name: Run tests on the native platform
-      run: platformio run -e heltec_wifi_kit_32_V3 -d ./examples/example1/
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.10'
+
+      - name: Install PlatformIO
+        run: python -m pip install --only-binary=:all: "platformio==6.1.19"
+
+      - name: Build Heltec firmware
+        run: platformio run -e heltec_wifi_kit_32_V3 -d ./examples/example1/
+
   test:
     runs-on: windows-latest
+
     steps:
-    - uses: actions/checkout@v7
-    - name: Set up Python
-      uses: actions/setup-python@v7
-      with:
-        python-version: '3.10'
-    - name: Install PlatformIO
-      run: |
-        python -m pip install --upgrade pip
-        pip install platformio
-    - name: Run tests on the native platform
-      run: platformio test -e stable -d ./examples/example1/
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.10'
+
+      - name: Install PlatformIO
+        run: python -m pip install --only-binary=:all: "platformio==6.1.19"
+
+      - name: Run tests on the native platform
+        run: platformio test -e stable -d ./examples/example1/
+
   release:
-    needs: 
+    needs:
       - build
       - test
+
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v7
-    - name: Set Up Git
-      run: |
-        git config --global user.name "${{ vars.USER_NAME }}"
-        git config --global user.email "${{ vars.USER_EMAIL }}"
-    - name: Get Latest Release Version
-      id: get_version
-      run: |
-        latest_version=$(curl -s https://api.github.com/repos/mauro-midolo/ESP32-heltec-oled-logger/releases/latest | jq -r .tag_name)
-        echo "Latest Version: $latest_version"
-        next_version=$(python -c "parts = '$latest_version'.split('.'); parts[-1] = str(int(parts[-1]) + 1); print('.'.join(parts))")
-        next_version_no_v=$(python -c "parts = '$latest_version'.split('.'); parts[-1] = str(int(parts[-1]) + 1); print('.'.join(parts).replace('v',''))")
-        echo "Next Version: $next_version"
-        echo "Next Version no version: $next_version_no_v"
-        echo "::set-output name=latest_version::$latest_version"
-        echo "::set-output name=version::$next_version"
-        echo "::set-output name=version_noversion::$next_version_no_v"
-    - name: Update Version in File
-      run: |
-        sed -i 's/\(mauro-midolo\/ESP32 Heltec OLED Logger@^\)[0-9.]\+/\1'"${{ steps.get_version.outputs.version_noversion }}"'/' ./examples/example1/platformio.ini
-        python -c "import json; data = json.load(open('library.json')); data['version'] = '${{ steps.get_version.outputs.version_noversion }}'; json.dump(data, open('library.json', 'w'))"
-    - name: Commit Changes
-      run: |
-        git add ./examples/example1/platformio.ini library.json
-        git commit -m "Upgrade version from ${{ steps.get_version.outputs.latest_version }} to ${{ steps.get_version.outputs.version }}"
-        git push origin main
-    - name: Create GitHub Release
-      uses: actions/create-release@v1
-      with:
-        tag_name: ${{ steps.get_version.outputs.version }}
-        release_name: ${{ steps.get_version.outputs.version }}
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Set up Python
-      uses: actions/setup-python@v7
-      with:
-        python-version: '3.10'
-    - name: Install PlatformIO
-      run: |
-        python -m pip install --upgrade pip
-        pip install platformio
-    - name: Release into PlatformIO
-      run: |
-        pio pkg publish --no-interactive
-      env:
-        PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_AUTH_TOKEN }}
-        
-      
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.10'
+
+      - name: Install PlatformIO
+        run: python -m pip install --only-binary=:all: "platformio==6.1.19"
+
+      - name: Set Up Git
+        env:
+          GIT_USER_NAME: ${{ vars.USER_NAME }}
+          GIT_USER_EMAIL: ${{ vars.USER_EMAIL }}
+        run: |
+          git config user.name "${GIT_USER_NAME:-github-actions[bot]}"
+          git config user.email "${GIT_USER_EMAIL:-41898282+github-actions[bot]@users.noreply.github.com}"
+
+      - name: Check main has not changed
+        run: |
+          git fetch origin main
+          if [ "$(git rev-parse origin/main)" != "$GITHUB_SHA" ]; then
+            echo "::error::main è cambiato: il rilascio deve essere eseguito dal workflow del nuovo commit."
+            exit 1
+          fi
+
+      - name: Calculate next version
+        id: version
+        shell: python
+        run: |
+          import json
+          import os
+          import re
+          import urllib.error
+          import urllib.request
+          from pathlib import Path
+
+          manifest = json.loads(
+              Path("library.json").read_text(encoding="utf-8")
+          )
+
+          url = (
+              f"{os.environ['GITHUB_API_URL']}/repos/"
+              f"{os.environ['GITHUB_REPOSITORY']}/releases/latest"
+          )
+
+          request = urllib.request.Request(
+              url,
+              headers={
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Accept": "application/vnd.github+json",
+              },
+          )
+
+          try:
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  latest = json.load(response)["tag_name"]
+          except urllib.error.HTTPError as error:
+              if error.code != 404:
+                  raise
+              latest = manifest["version"]
+
+          def parse_version(value):
+              match = re.fullmatch(r"v?(\d+)\.(\d+)\.(\d+)", value)
+              if not match:
+                  raise ValueError(
+                      f"Versione non supportata: {value!r}"
+                  )
+              return tuple(map(int, match.groups()))
+
+          major, minor, patch = max(
+              parse_version(latest),
+              parse_version(manifest["version"]),
+          )
+
+          version = f"{major}.{minor}.{patch + 1}"
+          tag = f"v{version}"
+
+          print(f"Latest release or initial version: {latest}")
+          print(f"Next version: {tag}")
+
+          with open(
+              os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8"
+          ) as output:
+              output.write(f"number={version}\n")
+              output.write(f"tag={tag}\n")
+
+      - name: Update version in files
+        shell: python
+        env:
+          NEXT_VERSION: ${{ steps.version.outputs.number }}
+        run: |
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          version = os.environ["NEXT_VERSION"]
+
+          ini_path = Path("examples/example1/platformio.ini")
+          content = ini_path.read_text(encoding="utf-8")
+
+          pattern = (
+              r"(mauro-midolo/ESP32 Heltec OLED Logger@\^)"
+              r"\d+\.\d+\.\d+"
+          )
+
+          content, count = re.subn(
+              pattern,
+              lambda match: match.group(1) + version,
+              content,
+          )
+
+          if count != 1:
+              raise RuntimeError(
+                  f"Attesa una dipendenza da aggiornare, trovate: {count}"
+              )
+
+          ini_path.write_text(content, encoding="utf-8")
+
+          manifest_path = Path("library.json")
+          manifest = json.loads(
+              manifest_path.read_text(encoding="utf-8")
+          )
+          manifest["version"] = version
+
+          manifest_path.write_text(
+              json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
+              encoding="utf-8",
+          )
+
+      - name: Commit and push version
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git add examples/example1/platformio.ini library.json
+          git commit -m "Release $RELEASE_TAG"
+          git tag "$RELEASE_TAG"
+          git push --atomic origin HEAD:main "refs/tags/$RELEASE_TAG"
+
+      - name: Create GitHub Release
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          gh release create "$RELEASE_TAG" \
+            --verify-tag \
+            --title "$RELEASE_TAG" \
+            --generate-notes
+
+      - name: Publish to PlatformIO
+        env:
+          PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_AUTH_TOKEN }}
+        run: pio pkg publish --no-interactive
